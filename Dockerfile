@@ -9,4 +9,7 @@ COPY . .
 RUN python3 -m venv venv
 RUN venv/bin/pip install -U -r requirements.txt
 
-CMD ["venv/bin/python3", "-m", "megadl"]
+# Disable Python output buffering so logs appear in docker logs immediately
+ENV PYTHONUNBUFFERED=1
+
+CMD ["venv/bin/python3", "-u", "-m", "megadl"]
