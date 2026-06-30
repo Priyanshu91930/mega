@@ -80,18 +80,28 @@ async def dl_from_cb(client: CypherClient, query: CallbackQuery):
     cli = MegaTools(client, conf)
 
     f_list = None
-    f_list = await cli.download(
-        url,
-        qusr,
-        qcid,
-        resp.id,
-        path=dlid,
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("Cancel ❌", callback_data=f"cancelqcb-{qusr}")],
-            ]
-        ),
-    )
+    try:
+        f_list = await cli.download(
+            url,
+            qusr,
+            qcid,
+            resp.id,
+            path=dlid,
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("Cancel ❌", callback_data=f"cancelqcb-{qusr}")],
+                ]
+            ),
+        )
+    except Exception as e:
+        from megadl.helpers.files import listfiles
+        f_list = listfiles(dlid)
+        if not f_list:
+            raise e
+        else:
+            logging.warning(f"Download partially failed: {e}")
+            await resp.edit(f"`Download partially completed. Error: {e.args[0] if e.args else e}`\n`Uploading successfully downloaded files...`")
+
     if not f_list:
         return
 
