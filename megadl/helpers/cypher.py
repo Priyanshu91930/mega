@@ -226,7 +226,9 @@ class MeganzClient(Client):
 
                 # Check auth users
                 if self.database:
+                    print(f"[DEBUG] run_checks: Checking database for user {uid}")
                     status = await self.database.add(uid)
+                    print(f"[DEBUG] run_checks: Database check done. status={status}")
                     if status["banned"]:
                         return await self.cyeor(
                             msg,
