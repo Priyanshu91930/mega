@@ -131,9 +131,10 @@ class MegaTools:
 
         target_idx = None
         file_list = []
+        last_update_time = 0
 
         async def read_and_choose():
-            nonlocal target_idx
+            nonlocal target_idx, last_update_time
             buffer = ""
             while True:
                 byte = await run.stdout.read(1)
@@ -156,14 +157,18 @@ class MegaTools:
 
                     # Print progress to telegram if it contains '%'
                     if "%" in line:
-                        try:
-                            progress_info = line.strip()
-                            progress_info = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', progress_info)
-                            await self.client.edit_message_text(
-                                chat_id, message_id, f"**Downloading:** `{file_name}`\n`{progress_info}`", **kwargs
-                            )
-                        except Exception:
-                            pass
+                        import time
+                        current_time = time.time()
+                        if current_time - last_update_time > 3.0:
+                            try:
+                                progress_info = line.strip()
+                                progress_info = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', progress_info)
+                                await self.client.edit_message_text(
+                                    chat_id, message_id, f"**Downloading:** `{file_name}`\n`{progress_info}`", **kwargs
+                                )
+                                last_update_time = current_time
+                            except Exception:
+                                pass
 
                 # Check if buffer ends with the prompt (without needing a newline)
                 if "Choose files" in buffer or "download:" in buffer:
