@@ -336,35 +336,13 @@ class MegaTools:
         if not nodes:
             return []
 
-        # Map handle to node
-        node_map = {n["h"]: n for n in nodes}
-        
-        # Resolve keys iteratively
-        keys = {root_folder: shared_key}
-        resolved_any = True
-        while resolved_any:
-            resolved_any = False
-            for node in nodes:
-                nh = node["h"]
-                np = node["p"]
-                if nh not in keys and np in keys:
-                    try:
-                        k = decrypt_node_key(node["k"], keys[np])
-                        if k:
-                            keys[nh] = k
-                            resolved_any = True
-                    except Exception:
-                        pass
-
         # Extract all files (type 0)
         files = []
         for node in nodes:
             if node.get("t") == 0:
-                nh = node["h"]
-                np = node["p"]
-                if nh in keys:
-                    try:
-                        key = keys[nh]
+                try:
+                    key = decrypt_node_key(node["k"], shared_key)
+                    if key:
                         k = (
                             key[0] ^ key[4],
                             key[1] ^ key[5],
@@ -374,11 +352,11 @@ class MegaTools:
                         attrs = decrypt_attr(base64_url_decode(node["a"]), k)
                         files.append({
                             "name": attrs["n"],
-                            "url": f"https://mega.nz/folder/{root_folder}#{shared_enc_key}/file/{nh}",
+                            "url": f"https://mega.nz/folder/{root_folder}#{shared_enc_key}/file/{node['h']}",
                             "size": node.get("s", 0)
                         })
-                    except Exception:
-                        pass
+                except Exception:
+                    pass
         return files
 
     async def __shellExec(
