@@ -134,21 +134,39 @@ class MegaTools:
 
         async def read_and_choose():
             nonlocal target_idx
+            buffer = ""
             while True:
-                line_bytes = await run.stdout.readline()
-                if not line_bytes:
+                byte = await run.stdout.read(1)
+                if not byte:
                     break
-                line = line_bytes.decode("utf-8", errors="ignore")
-                
-                # Match choice like "  1) folder/file.mp4"
-                match = re.search(r'^\s*(\d+)\)\s*(.+)$', line.strip())
-                if match:
-                    idx = int(match.group(1))
-                    name = match.group(2).strip()
-                    file_list.append((idx, name))
+                char = byte.decode("utf-8", errors="ignore")
+                buffer += char
 
-                # Check if it prompts for choice
-                if "Choose files" in line or "e.g. 1-5" in line or "download:" in line:
+                # Process line if we encounter a newline or carriage return
+                if char in ("\n", "\r"):
+                    line = buffer
+                    buffer = ""
+                    
+                    # Match choice like "  1) folder/file.mp4"
+                    match = re.search(r'^\s*(\d+)\)\s*(.+)$', line.strip())
+                    if match:
+                        idx = int(match.group(1))
+                        name = match.group(2).strip()
+                        file_list.append((idx, name))
+
+                    # Print progress to telegram if it contains '%'
+                    if "%" in line:
+                        try:
+                            progress_info = line.strip()
+                            progress_info = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', progress_info)
+                            await self.client.edit_message_text(
+                                chat_id, message_id, f"**Downloading:** `{file_name}`\n`{progress_info}`", **kwargs
+                            )
+                        except Exception:
+                            pass
+
+                # Check if buffer ends with the prompt (without needing a newline)
+                if "Choose files" in buffer or "download:" in buffer:
                     for idx, name in file_list:
                         if name == file_name or name.endswith("/" + file_name):
                             target_idx = idx
@@ -157,16 +175,7 @@ class MegaTools:
                         run.stdin.write(f"{target_idx}\n".encode())
                         await run.stdin.drain()
                     run.stdin.close()
-
-                # Print progress to telegram if it contains '%'
-                if "%" in line:
-                    try:
-                        progress_info = line.strip()
-                        await self.client.edit_message_text(
-                            chat_id, message_id, f"**Downloading:** `{file_name}`\n`{progress_info}`", **kwargs
-                        )
-                    except Exception:
-                        pass
+                    buffer = ""
 
         await read_and_choose()
         await run.wait()
