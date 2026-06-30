@@ -403,7 +403,7 @@ You can open a new issue if the problem persists - https://github.com/partiallyw
 
         elif "ERROR" in out:
             raise UnknownError(
-                self.__genErrorMsg("Operation cancelled due to an unknown error.")
+                self.__genErrorMsg(f"Operation cancelled: {out.strip()}")
             )
         else:
             return
