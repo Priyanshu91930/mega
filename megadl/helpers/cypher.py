@@ -292,6 +292,7 @@ class MeganzClient(Client):
             return None
 
     async def use_listner(self, _, msg: Message):
+        print(f"[DEBUG] Received message from {msg.chat.id}: {msg.text or '[Media/Other]'}")
         lstn = self.listening.get(msg.chat.id)
         if lstn and not lstn["task"].done():
             lstn["task"].set_result(msg)
