@@ -169,6 +169,12 @@ class MeganzClient(Client):
             except Exception as e:
                 logging.warning(f"Failed to send update message: {e}")
 
+        # Print registered handler groups to debug
+        try:
+            print(f"> Registered handler groups: {self.dispatcher.groups}")
+        except Exception as e:
+            print(f"> Could not print dispatcher groups: {e}")
+
     def run_checks(self, func) -> Callable:
         """
         Decorator to run middleware
