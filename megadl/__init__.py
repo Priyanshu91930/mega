@@ -40,3 +40,7 @@ else:
 # client
 from .helpers.cypher import MeganzClient
 CypherClient: "MeganzClient" = MeganzClient()
+
+# Import modules AFTER CypherClient is created so their
+# @CypherClient.on_message(...) decorators can register handlers.
+from .modules import admin, auth, bonus, callbacks, generals, mega_dl, mega_up  # noqa: E402, F401
