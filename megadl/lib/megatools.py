@@ -357,6 +357,8 @@ class MegaTools:
                         })
                 except Exception:
                     pass
+        # Sort files alphabetically by name
+        files.sort(key=lambda x: x["name"])
         return files
 
     async def __shellExec(
