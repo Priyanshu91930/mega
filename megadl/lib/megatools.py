@@ -18,6 +18,7 @@ from megadl.helpers.crypt import (
     decrypt_attr,
     decrypt_node_key,
     base64_url_decode,
+    a32_to_str,
 )
 
 
@@ -349,10 +350,14 @@ class MegaTools:
                             key[2] ^ key[6],
                             key[3] ^ key[7],
                         )
+                        import base64
                         attrs = decrypt_attr(base64_url_decode(node["a"]), k)
+                        raw_key = a32_to_str(key)
+                        file_key_b64 = base64.b64encode(raw_key).decode('utf-8')
+                        file_key = re.sub(r"[+/=]", lambda x: {"+": "-", "/": "_", "=": ""}[x.group()], file_key_b64)
                         files.append({
                             "name": attrs["n"],
-                            "url": f"https://mega.nz/folder/{root_folder}#{shared_enc_key}/file/{node['h']}",
+                            "url": f"https://mega.nz/file/{node['h']}#{file_key}",
                             "size": node.get("s", 0)
                         })
                 except Exception:
