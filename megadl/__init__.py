@@ -12,7 +12,7 @@ print("Mega.nz Bot - Cypher is starting...")
 
 # uvloop integration for better asyncio performance
 # only on Unix-like systems (not Windows)
-if sys.platform != "win32":
+if sys.platform != "win32":  # type: ignore[comparison-overlap]
     try:
         import asyncio
         import uvloop
