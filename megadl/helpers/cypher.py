@@ -70,8 +70,10 @@ class MeganzClient(Client):
 
         # Initializing pyrogram
         print("> Initializing client")
+        if not os.path.exists("sessions"):
+            os.makedirs("sessions")
         super().__init__(
-            "MegaBotCypher",
+            "sessions/MegaBotCypher",
             bot_token=os.getenv("BOT_TOKEN"),
             api_id=os.getenv("APP_ID"),
             api_hash=os.getenv("API_HASH"),
