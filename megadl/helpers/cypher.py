@@ -56,7 +56,9 @@ class MeganzClient(Client):
         ):
             self.dl_loc = f"{self.cwd}/NexaBots"
         else:
-            self.dl_loc = os.path.expandvars(os.getenv("DOWNLOAD_LOCATION"))
+            loc = os.getenv("DOWNLOAD_LOCATION", "")
+            loc = loc.replace("${PWD}", self.cwd).replace("$PWD", self.cwd)
+            self.dl_loc = os.path.expandvars(loc)
 
         self.tmp_loc = f"{self.dl_loc}/temps"
         self.mx_size = int(os.getenv("TG_MAX_SIZE", 2040108421))
