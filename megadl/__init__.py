@@ -44,3 +44,5 @@ CypherClient: "MeganzClient" = MeganzClient()
 # Import modules AFTER CypherClient is created so their
 # @CypherClient.on_message(...) decorators can register handlers.
 from .modules import admin, auth, bonus, callbacks, generals, mega_dl, mega_up  # noqa: E402, F401
+print(f"> Modules loaded successfully")
+print(f"> Auth users: {CypherClient.auth_users} (empty = nobody can use bot!)")
