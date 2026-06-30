@@ -362,8 +362,11 @@ class MegaTools:
                         })
                 except Exception:
                     pass
-        # Sort files alphabetically by name
-        files.sort(key=lambda x: x["name"])
+        # Sort files naturally by name (so 10 comes after 2, and before 100)
+        def natural_sort_key(s):
+            return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
+        
+        files.sort(key=lambda x: natural_sort_key(x["name"]))
         return files
 
     async def __shellExec(
