@@ -20,4 +20,5 @@ async def run_bot():
 
 # Run the bot
 if __name__ == "__main__":
-    asyncio.run(run_bot())
+    loop = CypherClient.loop
+    loop.run_until_complete(run_bot())
