@@ -80,6 +80,64 @@ async def dl_from_cb(client: CypherClient, query: CallbackQuery):
 
     cli = MegaTools(client, conf)
 
+    # If it is a public folder link, resolve files and download them one by one
+    if "folder" in url or "#F!" in url:
+        try:
+            await resp.edit("`Fetching folder contents... 🔎`")
+            files = await cli.get_folder_files(url)
+        except Exception as e:
+            logging.error(f"Failed to fetch folder files: {e}")
+            return await resp.edit(f"`Failed to fetch folder: {e}`")
+
+        if not files:
+            return await resp.edit("`No files found or folder is empty/invalid.`")
+
+        await resp.edit(f"`Found {len(files)} files. Downloading and uploading sequentially...`")
+
+        success_count = 0
+        failed_files = []
+
+        for idx, f in enumerate(files, 1):
+            try:
+                # Update status
+                await resp.edit(f"`[{idx}/{len(files)}] Downloading: {f['name']}`")
+                
+                # Download single file
+                single_list = await cli.download(
+                    f['url'],
+                    qusr,
+                    qcid,
+                    resp.id,
+                    path=dlid,
+                )
+                
+                if single_list:
+                    # Upload single file immediately!
+                    await resp.edit(f"`[{idx}/{len(files)}] Uploading: {f['name']}`")
+                    await client.send_files(
+                        single_list,
+                        qcid,
+                        resp.id,
+                        reply_to_message_id=_mid,
+                        caption=f"**File:** `{f['name']}`\n\n**Join @NexaBotsUpdates ❤️**",
+                    )
+                    success_count += 1
+                # Clean up local folder for the next file
+                await client.full_cleanup(dlid, qusr)
+            except Exception as e:
+                failed_files.append(f['name'])
+                logging.warning(f"Failed to download/upload {f['name']}: {e}")
+                # Clean up local folder anyway
+                await client.full_cleanup(dlid, qusr)
+
+        # Final status message
+        status_text = f"**Folder Processed!** ✅\n\n**Success:** `{success_count}/{len(files)}` files"
+        if failed_files:
+            status_text += f"\n**Failed/Blocked:** `{len(failed_files)}` files"
+        await resp.edit(status_text)
+        return
+
+    # Default direct flow for single files
     f_list = None
     try:
         f_list = await cli.download(

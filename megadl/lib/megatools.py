@@ -307,6 +307,80 @@ class MegaTools:
         else:
             return "undefined", "undefined"
 
+    @staticmethod
+    async def get_folder_files(url: str) -> list[dict]:
+        """
+        Returns a list of dicts with information for all files in the folder recursively.
+        Each dict has: {'name': file_name, 'url': file_url, 'size': file_size}
+        """
+        is_folder = Regexes.pub_folder.search(url)
+        if not is_folder:
+            return []
+        root_folder, shared_enc_key = tuple(
+            [x for x in is_folder.groups() if x is not None]
+        )
+        shared_key = base64_to_a32(shared_enc_key)
+
+        data = [{"a": "f", "c": 1, "ca": 1, "r": 1}]
+        async with ClientSession() as session:
+            resp = await session.post(
+                "https://g.api.mega.co.nz/cs",
+                params={"id": 0, "n": root_folder},
+                data=json.dumps(data),
+            )
+            res_json = await resp.json()
+            if not res_json or not isinstance(res_json, list) or "f" not in res_json[0]:
+                return []
+            nodes = res_json[0]["f"]
+
+        if not nodes:
+            return []
+
+        # Map handle to node
+        node_map = {n["h"]: n for n in nodes}
+        
+        # Resolve keys iteratively
+        keys = {root_folder: shared_key}
+        resolved_any = True
+        while resolved_any:
+            resolved_any = False
+            for node in nodes:
+                nh = node["h"]
+                np = node["p"]
+                if nh not in keys and np in keys:
+                    try:
+                        k = decrypt_node_key(node["k"], keys[np])
+                        if k:
+                            keys[nh] = k
+                            resolved_any = True
+                    except Exception:
+                        pass
+
+        # Extract all files (type 0)
+        files = []
+        for node in nodes:
+            if node.get("t") == 0:
+                nh = node["h"]
+                np = node["p"]
+                if nh in keys:
+                    try:
+                        key = keys[nh]
+                        k = (
+                            key[0] ^ key[4],
+                            key[1] ^ key[5],
+                            key[2] ^ key[6],
+                            key[3] ^ key[7],
+                        )
+                        attrs = decrypt_attr(base64_url_decode(node["a"]), k)
+                        files.append({
+                            "name": attrs["n"],
+                            "url": f"https://mega.nz/folder/{root_folder}#{shared_enc_key}/file/{nh}",
+                            "size": node.get("s", 0)
+                        })
+                    except Exception:
+                        pass
+        return files
+
     async def __shellExec(
         self, cmd: str, user_id: int, chat_id: int = None, msg_id: int = None, **kwargs
     ):
