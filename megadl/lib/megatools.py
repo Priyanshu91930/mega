@@ -106,6 +106,72 @@ class MegaTools:
         )
         return listfiles(path)
 
+    async def download_file_from_folder(
+        self,
+        folder_url: str,
+        file_name: str,
+        user_id: int,
+        chat_id: int,
+        message_id: int,
+        path: str = "MegaDownloads",
+        **kwargs,
+    ) -> list:
+        """
+        Download a specific file from a public folder URL using --choose-files and piping input.
+        """
+        cmd = f'megadl {self.config} --choose-files --path "{path}" "{folder_url}"'
+        run = await asyncio.create_subprocess_shell(
+            cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            stdin=asyncio.subprocess.PIPE,
+            env=self.client.environs,
+        )
+        self.client.mega_running[user_id] = run.pid
+
+        target_idx = None
+        file_list = []
+
+        async def read_and_choose():
+            nonlocal target_idx
+            while True:
+                line_bytes = await run.stdout.readline()
+                if not line_bytes:
+                    break
+                line = line_bytes.decode("utf-8", errors="ignore")
+                
+                # Match choice like "  1) folder/file.mp4"
+                match = re.search(r'^\s*(\d+)\)\s*(.+)$', line.strip())
+                if match:
+                    idx = int(match.group(1))
+                    name = match.group(2).strip()
+                    file_list.append((idx, name))
+
+                # Check if it prompts for choice
+                if "Choose files" in line or "e.g. 1-5" in line or "download:" in line:
+                    for idx, name in file_list:
+                        if name == file_name or name.endswith("/" + file_name):
+                            target_idx = idx
+                            break
+                    if target_idx is not None:
+                        run.stdin.write(f"{target_idx}\n".encode())
+                        await run.stdin.drain()
+                    run.stdin.close()
+
+                # Print progress to telegram if it contains '%'
+                if "%" in line:
+                    try:
+                        progress_info = line.strip()
+                        await self.client.edit_message_text(
+                            chat_id, message_id, f"**Downloading:** `{file_name}`\n`{progress_info}`", **kwargs
+                        )
+                    except Exception:
+                        pass
+
+        await read_and_choose()
+        await run.wait()
+        return listfiles(path)
+
     async def upload(
         self,
         path: str,
