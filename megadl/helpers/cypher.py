@@ -82,6 +82,7 @@ class MeganzClient(Client):
         # Initializing mongodb
         print("> Initializing database")
         self.glob_tmp = {}
+        self._update_msg = None
         self.environs = os.environ.copy()
         self.cipher = None
 
@@ -137,9 +138,8 @@ class MeganzClient(Client):
                     run_on_shell("git update-index --assume-unchanged .env mega.ini")
                     run_on_shell("git pull")
                     self.version = remote_updates["version"]
-                    self.send_message(
-                        self.log_chat,
-                        f"**#UPDATE** \n\n**Version:** `{self.version}` \n**Date:** `{remote_updates['date']}` \n**Changes:** `{remote_updates['message']}`",
+                    self._update_msg = (
+                        f"**#UPDATE** \n\n**Version:** `{self.version}` \n**Date:** `{remote_updates['date']}` \n**Changes:** `{remote_updates['message']}`"
                     )
         except (requests.RequestException, json.JSONDecodeError, KeyError, FileNotFoundError) as e:
             logging.warning(f"Auto-update check failed: {e}")
@@ -151,6 +151,13 @@ class MeganzClient(Client):
         self.ddl_running = {}
         self.add_handler(MessageHandler(self.use_listner))
 
+    async def start(self):
+        await super().start()
+        if self._update_msg and self.log_chat:
+            try:
+                await self.send_message(self.log_chat, self._update_msg)
+            except Exception as e:
+                logging.warning(f"Failed to send update message: {e}")
 
     def run_checks(self, func) -> Callable:
         """
