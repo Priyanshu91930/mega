@@ -148,7 +148,7 @@ class MeganzClient(Client):
         self.listening = {}
         self.mega_running = {}
         self.ddl_running = {}
-        self.add_handler(MessageHandler(self.use_listner))
+        self.add_handler(MessageHandler(self.use_listner), group=-1)
 
     async def start(self):
         await super().start()
