@@ -14,7 +14,13 @@ print("Mega.nz Bot - Cypher is starting...")
 # only on Unix-like systems (not Windows)
 if sys.platform != "win32":
     try:
+        import asyncio
         import uvloop
+        # Must create and set a loop BEFORE uvloop.install(), because uvloop's
+        # get_event_loop() (used by pyrogram at import time) raises RuntimeError
+        # on Python 3.10+ if no current event loop exists in the main thread.
+        _loop = uvloop.new_event_loop()
+        asyncio.set_event_loop(_loop)
         uvloop.install()
         print("> Using uvloop for better performance")
     except ImportError:
