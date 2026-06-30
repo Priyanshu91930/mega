@@ -3,14 +3,21 @@
 # Project: https://github.com/partiallywritten/Mega.nz-Bot
 # Description: __main__.py
 
+import asyncio
+
 from pyrogram import idle
 
 from . import CypherClient
 
-# Run the bot
-if __name__ == "__main__":
+
+async def run_bot():
     # Custom pyrogram client
     print("> Starting Client")
-    CypherClient.start()
+    await CypherClient.start()  # our async override sends the update message
     print("--------------------")
-    idle()
+    await idle()
+
+
+# Run the bot
+if __name__ == "__main__":
+    asyncio.run(run_bot())
