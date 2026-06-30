@@ -152,6 +152,12 @@ class MeganzClient(Client):
 
     async def start(self):
         await super().start()
+        try:
+            print("> Deleting webhook (if any) to enable polling")
+            await self.delete_webhook()
+        except Exception as e:
+            logging.warning(f"Failed to delete webhook: {e}")
+
         if self._update_msg and self.log_chat:
             try:
                 await self.send_message(self.log_chat, self._update_msg)
