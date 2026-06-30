@@ -16,12 +16,14 @@ if sys.platform != "win32":
     try:
         import asyncio
         import uvloop
-        # Must create and set a loop BEFORE uvloop.install(), because uvloop's
-        # get_event_loop() (used by pyrogram at import time) raises RuntimeError
-        # on Python 3.10+ if no current event loop exists in the main thread.
-        _loop = uvloop.new_event_loop()
-        asyncio.set_event_loop(_loop)
+        # 1) Install uvloop as the event loop policy first.
+        # 2) THEN create + set a loop, so pyrogram's import-time
+        #    asyncio.get_event_loop() call (in sync.py) finds a valid loop.
+        # Doing it the other way around doesn't work because uvloop.install()
+        # replaces the entire policy, discarding any previously set loop.
         uvloop.install()
+        _loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(_loop)
         print("> Using uvloop for better performance")
     except ImportError:
         pass
