@@ -154,7 +154,12 @@ class MeganzClient(Client):
         await super().start()
         try:
             print("> Deleting webhook (if any) to enable polling")
-            await self.delete_webhook()
+            import aiohttp
+            bot_token = os.getenv("BOT_TOKEN")
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://api.telegram.org/bot{bot_token}/deleteWebhook") as response:
+                    res = await response.json()
+                    print(f"> Webhook deletion status: {res}")
         except Exception as e:
             logging.warning(f"Failed to delete webhook: {e}")
 
