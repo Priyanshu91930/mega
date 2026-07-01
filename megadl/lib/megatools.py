@@ -455,7 +455,7 @@ class MegaTools:
         run = await asyncio.create_subprocess_shell(
             cmd,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
             env=self.client.environs,
         )
         self.client.mega_running[user_id] = run.pid
@@ -482,6 +482,11 @@ class MegaTools:
             clean_out = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', clean_out)
             if not clean_out:
                 return
+
+            # Check errors in stdout stream since stderr is redirected
+            if run.returncode is None:
+                await self.__checkErrors(clean_out)
+
             if "%" in clean_out:
                 if current_time - last_update_time < 3.0:
                     return
@@ -493,15 +498,10 @@ class MegaTools:
             except Exception as e:
                 logging.warning(e)
 
-        async def handle_stderr(err):
-            if run.returncode is None:
-                await self.__checkErrors(err)
-
         stdout = read_stream(run.stdout, handle_stdout)
-        stderr = read_stream(run.stderr, handle_stderr)
 
         try:
-            await asyncio.gather(stdout, stderr)
+            await stdout
         except asyncio.CancelledError:
             asyncio.create_task(self.__terminate_sub(run))
 
