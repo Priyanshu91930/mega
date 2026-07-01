@@ -459,22 +459,37 @@ class MegaTools:
             env=self.client.environs,
         )
         self.client.mega_running[user_id] = run.pid
+        last_update_time = 0
 
         async def read_stream(stream, handler):
+            buffer = ""
             while True:
-                line = await stream.readline()
-                if line:
-                    await handler(
-                        line.decode("utf-8") if isinstance(line, bytes) else line
-                    )
-                else:
+                byte = await stream.read(1)
+                if not byte:
                     break
+                char = byte.decode("utf-8", errors="ignore")
+                buffer += char
+                if char in ("\n", "\r"):
+                    if buffer.strip():
+                        await handler(buffer)
+                    buffer = ""
 
         async def handle_stdout(out):
+            nonlocal last_update_time
+            import time
+            current_time = time.time()
+            clean_out = out.strip()
+            clean_out = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', clean_out)
+            if not clean_out:
+                return
+            if "%" in clean_out:
+                if current_time - last_update_time < 3.0:
+                    return
             try:
                 await self.client.edit_message_text(
-                    chat_id, msg_id, f"**Process info:** \n`{out}`", **kwargs
+                    chat_id, msg_id, f"**Process info:** \n`{clean_out}`", **kwargs
                 )
+                last_update_time = current_time
             except Exception as e:
                 logging.warning(e)
 
