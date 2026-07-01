@@ -42,7 +42,7 @@ class MegaRegexs:
     user_used = re.compile(r"Used: (.*)")
     user_free = re.compile(r"Free: (.*)")
 
-    proxy_regex = re.compile(r'^(http|https|socks5|socks5h)://([a-zA-Z0-9\-\.]+):(\d+)$')
+    proxy_regex = re.compile(r'^(http|https|socks5|socks5h)://(?:([^:]+):([^@]+)@)?([a-zA-Z0-9\-\.]+):(\d+)$')
 
 
 Regexes = MegaRegexs()
