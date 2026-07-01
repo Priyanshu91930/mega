@@ -79,26 +79,35 @@ async def send_as_guessed(client, file, chat_id, mid, **kwargs):
             )
         # Video
         elif isit(r"\bvideo\b", fmime):
-            # Get duration of video in seconds
-            _sh = await run_partial(
-                run_on_shell,
-                f"ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 '{file}'",
-            )
-            vid_dur = int(float(_sh))
-            # Generate thumbnail for the video
-            _tmpth = f"{client.tmp_loc}/thumbnails"
-            _thumb = f"{_tmpth}/{chat_id}_{mid}.png"
-            if not path.isdir(_tmpth):
-                makedirs(_tmpth)
-            _sh = await run_partial(
-                run_on_shell,
-                f"ffmpeg -y -ss {timedelta(seconds=int(vid_dur/10))} -i '{file}' -vframes 1 '{_thumb}'",
-            )
+            vid_dur = 0
+            _thumb = None
+            try:
+                # Get duration of video in seconds
+                _sh = await run_partial(
+                    run_on_shell,
+                    f'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{file}"',
+                )
+                if _sh and _sh.strip():
+                    vid_dur = int(float(_sh.strip()))
+                # Generate thumbnail for the video
+                _tmpth = f"{client.tmp_loc}/thumbnails"
+                _thumb = f"{_tmpth}/{chat_id}_{mid}.png"
+                if not path.isdir(_tmpth):
+                    makedirs(_tmpth)
+                await run_partial(
+                    run_on_shell,
+                    f'ffmpeg -y -ss {timedelta(seconds=int(vid_dur/10))} -i "{file}" -vframes 1 "{_thumb}"',
+                )
+            except Exception as e:
+                import logging
+                logging.warning(f"Failed to get video duration/thumbnail: {e}")
+                _thumb = None
+
             await client.send_video(
                 chat_id,
                 file,
                 duration=vid_dur,
-                thumb=_thumb,
+                thumb=_thumb if _thumb and path.isfile(_thumb) else None,
                 progress=track_progress,
                 progress_args=(client, chat_id, mid, strtim),
                 **kwargs,
