@@ -102,6 +102,9 @@ async def dl_from_cb(client: CypherClient, query: CallbackQuery):
 
         for idx, f in enumerate(files, 1):
             try:
+                # Re-create unique download folder if it was cleaned up
+                if not path.isdir(dlid):
+                    makedirs(dlid)
                 # Update status
                 await resp.edit(f"`[{idx}/{len(files)}] Downloading: {f['name']}`")
                 
