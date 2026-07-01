@@ -102,10 +102,9 @@ async def dl_from_cb(client: CypherClient, query: CallbackQuery):
                 # Update status
                 await resp.edit(f"`[{idx}/{len(files)}] Downloading: {f['name']}`")
                 
-                # Download single file using choose-files
-                single_list = await cli.download_file_from_folder(
-                    url,
-                    f['name'],
+                # Download single file using its direct decrypted URL
+                single_list = await cli.download(
+                    f['url'],
                     qusr,
                     qcid,
                     resp.id,
