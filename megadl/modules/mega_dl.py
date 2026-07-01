@@ -70,6 +70,9 @@ async def dl_from_cb(client: CypherClient, query: CallbackQuery):
             conf = f"--username {email} --password {password} {proxy}"
 
     # Create unique download folder
+    if path.exists(dlid) and not path.isdir(dlid):
+        import os
+        os.remove(dlid)
     if not path.isdir(dlid):
         makedirs(dlid)
 
