@@ -120,6 +120,7 @@ class MegaTools:
         Download a specific file from a public folder URL using --choose-files and piping input.
         """
         cmd = f'stdbuf -o0 -e0 megadl {self.config} --choose-files --path "{path}" "{folder_url}"'
+        print(f"[DEBUG] Running command: {cmd}")
         run = await asyncio.create_subprocess_shell(
             cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -139,17 +140,20 @@ class MegaTools:
             while True:
                 byte = await run.stdout.read(1)
                 if not byte:
+                    print(f"[DEBUG] Subprocess stdout closed.")
                     break
                 char = byte.decode("utf-8", errors="ignore")
                 buffer += char
 
                 # Process line if we encounter a newline or carriage return
                 if char in ("\n", "\r"):
-                    line = buffer
+                    line = buffer.strip()
                     buffer = ""
+                    if line:
+                        print(f"[DEBUG] megadl output line: {line}")
                     
                     # Match choice like "  1) folder/file.mp4"
-                    match = re.search(r'^\s*(\d+)\)\s*(.+)$', line.strip())
+                    match = re.search(r'^\s*(\d+)\)\s*(.+)$', line)
                     if match:
                         idx = int(match.group(1))
                         name = match.group(2).strip()
@@ -161,24 +165,30 @@ class MegaTools:
                         current_time = time.time()
                         if current_time - last_update_time > 3.0:
                             try:
-                                progress_info = line.strip()
+                                progress_info = line
                                 progress_info = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', progress_info)
                                 await self.client.edit_message_text(
                                     chat_id, message_id, f"**Downloading:** `{file_name}`\n`{progress_info}`", **kwargs
                                 )
                                 last_update_time = current_time
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                print(f"[DEBUG] Failed to edit progress message: {e}")
 
                 # Check if buffer ends with the prompt (without needing a newline)
                 if "Choose files" in buffer or "download:" in buffer:
+                    print(f"[DEBUG] Prompt detected. Buffer: {buffer.strip()}")
+                    print(f"[DEBUG] Collected {len(file_list)} files from folder.")
                     for idx, name in file_list:
                         if name == file_name or name.endswith("/" + file_name):
                             target_idx = idx
                             break
                     if target_idx is not None:
+                        print(f"[DEBUG] Found matching file '{file_name}' at index: {target_idx}")
                         run.stdin.write(f"{target_idx}\n".encode())
                         await run.stdin.drain()
+                        print(f"[DEBUG] Selection {target_idx} written to stdin.")
+                    else:
+                        print(f"[DEBUG] Warning: Could not find matching file '{file_name}' in folder contents.")
                     run.stdin.close()
                     buffer = ""
 
