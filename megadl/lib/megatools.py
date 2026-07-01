@@ -88,14 +88,14 @@ class MegaTools:
         """
         # Public link download: Supports both file and folders
         if Regexes.pub_file_folder.match(url):
-            cmd = f'megadl {self.config} --path "{path}" {url}'
+            cmd = f'stdbuf -o0 -e0 megadl {self.config} --path "{path}" {url}'
 
         # Private link downloads: Supports both file and folders
         elif Regexes.prv_file_folder.match(url):
-            cmd = f'megaget --no-ask-password {self.config} --path "{path}" {url}'
+            cmd = f'stdbuf -o0 -e0 megaget --no-ask-password {self.config} --path "{path}" {url}'
 
         else:
-            cmd = f'megacopy --no-ask-password {self.config} -l "{path}" -r "{url}" --download'
+            cmd = f'stdbuf -o0 -e0 megacopy --no-ask-password {self.config} -l "{path}" -r "{url}" --download'
         await run_partial(
             self.__shellExec,
             cmd,
@@ -119,7 +119,7 @@ class MegaTools:
         """
         Download a specific file from a public folder URL using --choose-files and piping input.
         """
-        cmd = f'megadl {self.config} --choose-files --path "{path}" "{folder_url}"'
+        cmd = f'stdbuf -o0 -e0 megadl {self.config} --choose-files --path "{path}" "{folder_url}"'
         run = await asyncio.create_subprocess_shell(
             cmd,
             stdout=asyncio.subprocess.PIPE,
