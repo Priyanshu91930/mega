@@ -152,6 +152,9 @@ class MegaTools:
                     if line:
                         print(f"[DEBUG] megadl output line: {line}")
                     
+                    if "over quota" in line.lower() or "509" in line:
+                        raise QuotaExceededError()
+                    
                     # Match choice like "|--3. TG- @viral_adda_97 (1).mp4 (4.0MiB)" or "1. Folder/"
                     clean_line = re.sub(r'^\|[-|\s]*', '', line)
                     match = re.search(r'^(\d+)\.\s*(.+?)(?:\s+\([^)]+\))?$', clean_line)
@@ -569,6 +572,9 @@ You can open a new issue if the problem persists - https://github.com/partiallyw
         elif "Can't login to mega.nz" in out:
             raise LoginError
 
+        elif "over quota" in out.lower() or "509" in out:
+            raise QuotaExceededError()
+
         elif "ERROR" in out:
             raise UnknownError(
                 self.__genErrorMsg(f"Operation cancelled: {out.strip()}")
@@ -619,3 +625,10 @@ class UploadFailed(Exception):
 class UnknownError(Exception):
     def __init__(self, e) -> None:
         super().__init__(e)
+
+
+class QuotaExceededError(Exception):
+    def __init__(self) -> None:
+        super().__init__(
+            "Your MEGA transfer quota has been exceeded (Server returned 509 over quota). Please wait for the quota to reset (up to 6 hours) or use a different account / proxy."
+        )
