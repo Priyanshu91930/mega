@@ -176,7 +176,7 @@ class MegaTools:
                                 print(f"[DEBUG] Failed to edit progress message: {e}")
 
                 # Check if buffer ends with the prompt (without needing a newline)
-                if "Choose files" in buffer or "download:" in buffer:
+                if "Choose files" in buffer or "download:" in buffer or "Enter numbers of files" in buffer:
                     print(f"[DEBUG] Prompt detected. Buffer: {buffer.strip()}")
                     print(f"[DEBUG] Collected {len(file_list)} files from folder.")
                     for idx, name in file_list:
