@@ -102,7 +102,7 @@ class MeganzClient(Client):
         )
         log_chat = os.getenv("LOG_CHAT")
         self.log_chat = int(log_chat) if log_chat and log_chat != "-1001234567890" else None
-        self.use_logs = {"dl_from", "up_to"}
+        self.use_logs = {"dl_from", "up_to", "dl_from_cb", "to_up_cb"}
         self.req_db_fn = {"mega_logger", "mega_logoutter", "set_user_proxy"}
         self.is_public = True if self.database else False
 
