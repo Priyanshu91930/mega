@@ -152,8 +152,9 @@ class MegaTools:
                     if line:
                         print(f"[DEBUG] megadl output line: {line}")
                     
-                    # Match choice like "  1) folder/file.mp4"
-                    match = re.search(r'^\s*(\d+)\)\s*(.+)$', line)
+                    # Match choice like "|--3. TG- @viral_adda_97 (1).mp4 (4.0MiB)" or "1. Folder/"
+                    clean_line = re.sub(r'^\|[-|\s]*', '', line)
+                    match = re.search(r'^(\d+)\.\s*(.+?)(?:\s+\([^)]+\))?$', clean_line)
                     if match:
                         idx = int(match.group(1))
                         name = match.group(2).strip()
