@@ -17,7 +17,7 @@ from pyrogram.types import (
 )
 
 from megadl import CypherClient
-from megadl.lib.megatools import MegaTools
+from megadl.lib.megatools import MegaTools, QuotaExceededError
 
 
 @CypherClient.on_message(
@@ -131,6 +131,14 @@ async def dl_from_cb(client: CypherClient, query: CallbackQuery):
                     success_count += 1
                 # Clean up local folder for the next file
                 await client.full_cleanup(dlid, qusr)
+            except QuotaExceededError as e:
+                logging.warning(f"Quota exceeded. Aborting folder download: {e}")
+                # Add all remaining files to failed
+                for f_rem in files[idx-1:]:
+                    failed_files.append(f_rem['name'])
+                # Clean up local folder
+                await client.full_cleanup(dlid, qusr)
+                break
             except Exception as e:
                 failed_files.append(f['name'])
                 logging.warning(f"Failed to download/upload {f['name']}: {e}")
