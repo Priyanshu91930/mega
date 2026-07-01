@@ -195,12 +195,15 @@ class MeganzClient(Client):
                 if _func_name in self.use_logs:
                     # return if user has already started a process
                     if uid in self.mega_running or uid in self.ddl_running:
-                        return await msg.reply(
-                            "`You've already started a process. Wait until it's finished before starting another one 🥱`"
+                        return await self.cyeor(
+                            msg,
+                            "`You've already started a process. Wait until it's finished before starting another one 🥱`",
+                            reply=True,
                         )
                     # send logs to the log chat if available
                     if self.log_chat:
-                        _frwded = await msg.forward(chat_id=self.log_chat)
+                        msg_to_forward = msg if isinstance(msg, Message) else msg.message
+                        _frwded = await msg_to_forward.forward(chat_id=self.log_chat)
                         await _frwded.reply(
                             f"**#UPLOAD_LOG** \n\n**From:** `{uid}` \n**Get history:** `/info {uid}`"
                         )
