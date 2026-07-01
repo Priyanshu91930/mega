@@ -315,6 +315,8 @@ class MeganzClient(Client):
             return None
 
     async def use_listner(self, _, msg: Message):
+        if self.log_chat and msg.chat.id == self.log_chat:
+            return msg.stop_propagation()
         print(f"[DEBUG] Received message from {msg.chat.id}: {msg.text or '[Media/Other]'}")
         lstn = self.listening.get(msg.chat.id)
         if lstn and not lstn["task"].done():
